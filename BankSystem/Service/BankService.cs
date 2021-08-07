@@ -31,19 +31,36 @@ namespace BankSystem.BankService
                     }
                 }
             }
-            
+
             if (person is Employee)
             {
                 foreach (var men in employes)
                 {
-                    if (men.PassNom== person.PassNom)
+                    if (men.PassNom == person.PassNom)
                     {
                         return men;
                     }
                 }
             }
-
             return null;
+        }
+
+        public void Add<T>(T person) where T : IPerson
+        {
+            if (person is Client)
+            {
+                if (!klients.Contains((Client) (IPerson) person))
+                {
+                    klients.Add((Client) (IPerson) person);
+                }
+            }
+            if (person is Employee)
+            {
+                if (!employes.Contains((Employee) (IPerson) person))
+                {
+                    employes.Add((Employee) (IPerson) person);
+                }
+            }
         }
     }
 }
