@@ -23,25 +23,14 @@ namespace BankSystem.BankService
         {
             if (person is Client)
             {
-                foreach (var men in klients)
-                {
-                    if (men.PassNom == person.PassNom)
-                    {
-                        return men;
-                    }
-                }
+                return (IPerson) klients.Where(p => p.PassNom.Contains(person.PassNom));
             }
 
             if (person is Employee)
             {
-                foreach (var men in employes)
-                {
-                    if (men.PassNom == person.PassNom)
-                    {
-                        return men;
-                    }
-                }
+                return (IPerson) employes.Where(p => p.PassNom.Contains(person.PassNom));
             }
+
             return null;
         }
 
@@ -54,6 +43,7 @@ namespace BankSystem.BankService
                     klients.Add((Client) (IPerson) person);
                 }
             }
+
             if (person is Employee)
             {
                 if (!employes.Contains((Employee) (IPerson) person))
