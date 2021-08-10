@@ -1,6 +1,6 @@
 using BankSystem.Models;
 
-namespace BankSystem.BankService
+namespace BankSystem.Service
 {
     public interface IExchange
     {

@@ -1,7 +1,7 @@
 using System;
 using BankSystem.Models;
 
-namespace BankSystem.BankService
+namespace BankSystem.Service
 {
     public class Exchange : IExchange
     {
