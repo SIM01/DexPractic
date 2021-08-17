@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using BankSystem.Service;
 using BankSystem.Models;
+using Bogus;
 
 namespace BankSystem
 {
@@ -10,12 +12,18 @@ namespace BankSystem
         static void Main(string[] args)
         {
             var klientaccountDebet = new Accounts()
-                {Account = new //Eur() 
-                    DefaultCurrency() {CurrencyRate = 1.2}, Sum = 100};
+            {
+                Account = new //Eur() 
+                    DefaultCurrency() {CurrencyRate = 1.2},
+                Sum = 100
+            };
 
             var klientaccountKredit = new Accounts()
-                {Account = new //Usd() 
-                    DefaultCurrency(){CurrencyRate = 1}, Sum = 200};
+            {
+                Account = new //Usd() 
+                    DefaultCurrency() {CurrencyRate = 1},
+                Sum = 200
+            };
             var bank = new BankService();
             var exchange = new Exchange();
             decimal sumin = 50;
@@ -37,19 +45,44 @@ namespace BankSystem
                     $"ФИО:{men.Fio}, № паспорта:{men.PassNom}, дата рождения:{men.DateOfBirth.ToString("dd/mm/yyyy")};");
             }
 
-            bank.Add<Client>(new Client()
-                {Fio = "Тест Тест Тест", PassNom = 123456, DateOfBirth = new DateTime(1983, 7, 20)});
+            var clientGenerator = new Faker<Client>("ru")
+                    .RuleFor(x => x.Fio, f => f.Name.FullName())
+                    .RuleFor(x => x.PassNom, f => f.Random.Int(11111, 99999))
+                    .RuleFor(x => x.DateOfBirth, f => f.Date.Past(60, DateTime.Now.AddYears(-18)))
+                ;
 
-            var klientaccount1 = new Accounts()
-                {Account = new DefaultCurrency() {CurrencyRate = 1.2, CurrencyName = "UAH"}, Sum = 100};
+            var fakeClients = clientGenerator.Generate(10).ToList();
 
-            var klientaccount2 = new Accounts()
-                {Account = new DefaultCurrency() {CurrencyRate = 1, CurrencyName = "RUB"}, Sum = 200};
 
-            var newCli = new Client()
-                {Fio = "Тест2 Тест2 Тест2", PassNom = 654123, DateOfBirth = new DateTime(1988, 6, 20)};
-            bank.ClientAccount(newCli, klientaccount1);
-            bank.ClientAccount(newCli, klientaccount2);
+            var employeeGenerator = new Faker<Employee>("ru")
+                .RuleFor(x => x.Fio, f => f.Name.FullName())
+                .RuleFor(x => x.PassNom, f => f.Random.Int(111111, 999999))
+                .RuleFor(x => x.DateOfBirth, f => f.Date.Past(60, DateTime.Now.AddYears(-18)))
+                .RuleFor(x => x.Position, f => f.Random.ListItem(new List<string>
+                {
+                    "Программист",
+                    "Доктор",
+                    "Маляр",
+                    "Дизайнер",
+                    "Слесарь",
+                    "Милиционер",
+                    "Дворник",
+                    "Менеджер"
+                }));
+            var fakeEmployer = employeeGenerator.Generate(10).ToList();
+
+            var accountGenerator = new Faker<Accounts>("ru")
+                    .RuleFor(x => x.Account, f => new DefaultCurrency() {CurrencyRate = 1.2, CurrencyName = "UAH"})
+                    .RuleFor(x => x.Sum, f => f.Random.Decimal(0, 100000))
+                ;
+
+            var fakeAccounts = accountGenerator.Generate(10).ToList();
+            for (int i = 0; i < 10; i++)
+            {
+                bank.Add<Client>(fakeClients[i]);
+                bank.Add<Employee>(fakeEmployer[i]);
+                bank.ClientAccount(fakeClients[i], fakeAccounts[i]);
+            }
         }
     }
 }

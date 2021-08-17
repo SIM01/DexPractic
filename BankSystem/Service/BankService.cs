@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using BankSystem.Exceptions;
 using BankSystem.Models;
+using Newtonsoft.Json;
 
 namespace BankSystem.Service
 {
@@ -17,137 +17,113 @@ namespace BankSystem.Service
         public List<Employee> employes = new List<Employee>();
 
         Dictionary<Client, List<Accounts>> bankklients = new Dictionary<Client, List<Accounts>>();
+        Dictionary<int, List<Accounts>> newbankklients = new Dictionary<int, List<Accounts>>();
 
         public BankService()
         {
-            DataBaseCreate<Client>(new Client());
+            DataBaseCreate(clients.GetType().GetGenericArguments().Single().Name);
+            DataBaseCreate(employes.GetType().GetGenericArguments().Single().Name);
+            DataBaseCreate(newbankklients.GetType().GetGenericArguments()[1].GetGenericArguments().Single().Name);
 
-            DataBaseCreate<Client>(new Client(), 1);
-
-            DataBaseCreate<Employee>(new Employee());
-
-            DataRequest(GetFilePath<IPerson>(new Client()));
-            DataRequest(GetFilePath<IPerson>(new Employee()));
-
-            DataRequest(GetFilePath<IPerson>(new Client(), 1));
+            clients = DataRequest<Client>(clients).Item1;
+            employes = DataRequest<Employee>(employes).Item1;
+            newbankklients = DataRequest<People>(null, newbankklients).Item2;
         }
 
-        private void DataBaseCreate<T>(T person, int optionalint = 0) where T : IPerson
+
+        private Tuple<List<T>, Dictionary<int, List<Accounts>>> DataRequest<T>(List<T> person,
+            Dictionary<int, List<Accounts>> dictionaryacc = null) where T : People
         {
-            DirectoryInfo directoryInfo = new DirectoryInfo(GetFilePath<IPerson>(null));
-            if (!directoryInfo.Exists)
+            string path;
+            if (person is null)
             {
-                directoryInfo.Create();
+                path = GetFilePath(dictionaryacc.GetType().GetGenericArguments()[1].GetGenericArguments().Single()
+                    .Name);
+            }
+            else
+            {
+                path = GetFilePath(person.GetType().GetGenericArguments().Single().Name);
             }
 
-            if (!File.Exists(GetFilePath<IPerson>(person, optionalint)))
-            {
-                File.Create(GetFilePath<IPerson>(person, optionalint));
-            }
-        }
-
-        private string GetFilePath<T>(T person, int optionalint = 0) where T : IPerson
-        {
-            string path = Path.Combine("NOSQL_DB");
-
-            if (person is Client)
-            {
-                if (optionalint == 0)
-                {
-                    path = path + Path.DirectorySeparatorChar.ToString() + "TABLE_CLIENTS.csv";
-                }
-                else
-                {
-                    path = path + Path.DirectorySeparatorChar.ToString() + "TABLE_ACCOUNTS.csv";
-                }
-            }
-
-
-            if (person is Employee)
-            {
-                path = path + Path.DirectorySeparatorChar.ToString() + "TABLE_EMPLOYES.csv";
-            }
-
-            return path;
-        }
-
-        private void DataRequest(string path)
-        {
             using (FileStream fileStream = new FileStream(path, FileMode.Open))
             {
                 byte[] arraytest = new byte[fileStream.Length];
                 fileStream.Read(arraytest, 0, arraytest.Length);
                 string readText = System.Text.Encoding.Default.GetString(arraytest);
-
-                string[] clientStrings = readText.Split('#');
-                foreach (string kli in clientStrings)
+                if (person is null)
                 {
-                    if (kli.Split('|').Length > 1)
-                    {
-                        string[] clientAcc = kli.Split('|');
-                        int count = 0;
-                        var client = new Client();
-                        List<Accounts> accounts = new List<Accounts>();
-                        foreach (string kliAcc in clientAcc)
-                        {
-                            if (count == 0)
-                            {
-                                string[] clientFields = kliAcc.Split(';');
-                                if (kliAcc.Split(';').Length == 3)
-                                {
-                                    client.Fio = clientFields[0];
-                                    client.PassNom = Convert.ToInt32(clientFields[1]);
-                                    client.DateOfBirth = Convert.ToDateTime(clientFields[2]);
-                                }
-                            }
-                            else
-                            {
-                                var account = new Accounts();
-                                string[] accFields = kliAcc.Split(';');
-
-                                account.Account = new DefaultCurrency
-                                {
-                                    CurrencyRate = Math.Round(Convert.ToDouble(accFields[0]), 4),
-                                    CurrencyName = accFields[1]
-                                };
-                                account.Sum = Convert.ToDecimal(accFields[2]);
-
-                                accounts.Add(account);
-                            }
-
-                            count++;
-                        }
-
-                        bankklients.Add(client, accounts);
-                    }
-                    else
-                    {
-                        string[] clientFields = kli.Split(';');
-                        if (kli.Split(';').Length == 3)
-                        {
-                            var client = new Client()
-                            {
-                                Fio = clientFields[0],
-                                PassNom = Convert.ToInt32(clientFields[1]),
-                                DateOfBirth = Convert.ToDateTime(clientFields[2])
-                            };
-                            clients.Add(client);
-                        }
-
-                        if (kli.Split(';').Length == 4)
-                        {
-                            var client = new Employee()
-                            {
-                                Fio = clientFields[0],
-                                PassNom = Convert.ToInt32(clientFields[1]),
-                                DateOfBirth = Convert.ToDateTime(clientFields[2]),
-                                Position = clientFields[3]
-                            };
-                            employes.Add(client);
-                        }
-                    }
+                    dictionaryacc = JsonConvert.DeserializeObject<Dictionary<int, List<Accounts>>>(readText);
+                }
+                else
+                {
+                    person = JsonConvert.DeserializeObject<List<T>>(readText);
                 }
             }
+
+            return Tuple.Create(person, dictionaryacc);
+        }
+
+        public void OverwriteFile<T>(List<T> person, Dictionary<int, List<Accounts>> dictionaryacc = null)
+            where T : People
+        {
+            string path;
+            string textToInsert;
+            if (person is null)
+            {
+                path = GetFilePath(dictionaryacc.GetType().GetGenericArguments()[1].GetGenericArguments().Single()
+                    .Name);
+                textToInsert = JsonConvert.SerializeObject(dictionaryacc);
+            }
+            else
+            {
+                path = GetFilePath(person.GetType().GetGenericArguments().Single().Name);
+                textToInsert = JsonConvert.SerializeObject(person);
+            }
+
+            using (FileStream fileStream = new FileStream(path, FileMode.Create))
+            {
+                byte[] array = System.Text.Encoding.Default.GetBytes(textToInsert);
+                fileStream.Write(array, 0, array.Length);
+            }
+        }
+
+        private void DataBaseCreate(string typ)
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(GetFilePath(null));
+            if (!directoryInfo.Exists)
+            {
+                directoryInfo.Create();
+            }
+
+            if (!File.Exists(GetFilePath(typ)))
+            {
+                File.Create(GetFilePath(typ));
+            }
+        }
+
+        private string GetFilePath(string typ)
+        {
+            string path;
+            switch (typ)
+            {
+                case "Client":
+                    path = Path.Combine("NOSQL_DB") + Path.DirectorySeparatorChar.ToString() + "TABLE_CLIENTS.csv";
+                    break;
+
+                case "Employee":
+                    path = Path.Combine("NOSQL_DB") + Path.DirectorySeparatorChar.ToString() + "TABLE_EMPLOYES.csv";
+                    break;
+
+                case "Accounts":
+                    path = Path.Combine("NOSQL_DB") + Path.DirectorySeparatorChar.ToString() + "TABLE_ACCOUNTS.csv";
+                    break;
+
+                default:
+                    path = Path.Combine("NOSQL_DB");
+                    break;
+            }
+
+            return path;
         }
 
         public Employee FindEmployee(Employee person)
@@ -177,20 +153,29 @@ namespace BankSystem.Service
 
         public void ClientAccount(Client person, Accounts account)
         {
-            if (bankklients.ContainsKey(person))
-            {
-                List<Accounts> clientacc = bankklients[person];
-                clientacc.Add(account);
-                bankklients[person] = clientacc;
-            }
-            else
+            if (newbankklients is null)
             {
                 List<Accounts> clientacc = new List<Accounts>();
                 clientacc.Add(account);
-                bankklients.Add(person, clientacc);
+                newbankklients.Add(person.PassNom, clientacc);
+            }
+            else
+            {
+                if (newbankklients.ContainsKey(person.PassNom))
+                {
+                    List<Accounts> clientacc = newbankklients[person.PassNom];
+                    clientacc.Add(account);
+                    newbankklients[person.PassNom] = clientacc;
+                }
+                else
+                {
+                    List<Accounts> clientacc = new List<Accounts>();
+                    clientacc.Add(account);
+                    newbankklients.Add(person.PassNom, clientacc);
+                }
             }
 
-            OverwriteFile(GetFilePath<IPerson>(new Client(), 1));
+            OverwriteFile<People>(null, newbankklients);
         }
 
         public void MoneyTransfer(decimal sum, Accounts accountDebet, Accounts accountKredit,
@@ -240,7 +225,7 @@ namespace BankSystem.Service
                 if (!clients.Contains((Client) (IPerson) person))
                 {
                     clients.Add((Client) (IPerson) person);
-                    AddToFile<IPerson>(GetFilePath<IPerson>(person), person);
+                    OverwriteFile<Client>(clients);
                 }
             }
 
@@ -249,57 +234,8 @@ namespace BankSystem.Service
                 if (!employes.Contains((Employee) (IPerson) person))
                 {
                     employes.Add((Employee) (IPerson) person);
-                    AddToFile<IPerson>(GetFilePath<IPerson>(person), person);
+                    OverwriteFile<Employee>(employes);
                 }
-            }
-        }
-
-        public void AddToFile<T>(string path, T person) where T : IPerson
-        {
-            PropertyInfo[] myProperty = person.GetType().GetProperties();
-            string textToInsert = "#";
-            foreach (PropertyInfo f in myProperty)
-            {
-                textToInsert = textToInsert + f.GetValue(person) + ";";
-            }
-
-            textToInsert = textToInsert.Substring(0, textToInsert.Length - 1);
-            using (FileStream fileStream = new FileStream(path, FileMode.Append))
-            {
-                byte[] array = System.Text.Encoding.Default.GetBytes(textToInsert);
-                fileStream.Write(array, 0, array.Length);
-            }
-        }
-
-        public void OverwriteFile(string path)
-        {
-            string textToInsert = "";
-            foreach (var kli in bankklients.Keys)
-            {
-                PropertyInfo[] myProperty = kli.GetType().GetProperties();
-                textToInsert = textToInsert + "#";
-                foreach (PropertyInfo f in myProperty)
-                {
-                    textToInsert = textToInsert + f.GetValue(kli) + ";";
-                }
-
-                textToInsert = textToInsert.Substring(0, textToInsert.Length - 1);
-                List<Accounts> clientacc = new List<Accounts>();
-                clientacc = bankklients[kli];
-                foreach (var acc in clientacc)
-                {
-                    textToInsert = textToInsert + "|";
-
-                    textToInsert = textToInsert + acc.Account.CurrencyRate.ToString() + ";";
-                    textToInsert = textToInsert + acc.Account.CurrencyName + ";";
-                    textToInsert = textToInsert + acc.Sum.ToString() + ";";
-                }
-            }
-
-            using (FileStream fileStream = new FileStream(path, FileMode.Create))
-            {
-                byte[] array = System.Text.Encoding.Default.GetBytes(textToInsert);
-                fileStream.Write(array, 0, array.Length);
             }
         }
     }
