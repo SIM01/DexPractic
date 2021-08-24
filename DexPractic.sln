@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankSystem", "BankSystem\BankSystem.csproj", "{BDE50606-2BC8-4A31-92D0-D547D9ED2B1D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DexPractic.Tests", "DexPractic.Tests\DexPractic.Tests.csproj", "{F81BDC72-15C2-4F07-BFBA-2E3EC0BBCF66}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{BDE50606-2BC8-4A31-92D0-D547D9ED2B1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDE50606-2BC8-4A31-92D0-D547D9ED2B1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDE50606-2BC8-4A31-92D0-D547D9ED2B1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F81BDC72-15C2-4F07-BFBA-2E3EC0BBCF66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F81BDC72-15C2-4F07-BFBA-2E3EC0BBCF66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F81BDC72-15C2-4F07-BFBA-2E3EC0BBCF66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F81BDC72-15C2-4F07-BFBA-2E3EC0BBCF66}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

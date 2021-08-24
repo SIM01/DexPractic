@@ -136,16 +136,16 @@ namespace BankSystem.Service
             return (Client) Find(person);
         }
 
-        private IPerson Find<T>(T person) where T : IPerson
+        private People Find<T>(T person) where T : People
         {
             if (person is Client)
             {
-                return (IPerson) clients.Where(p => p.PassNom.Equals(person.PassNom));
+                return clients.Where(p => p.PassNom.Equals(person.PassNom)).SingleOrDefault() ;
             }
 
             if (person is Employee)
             {
-                return (IPerson) employes.Where(p => p.PassNom.Equals(person.PassNom));
+                return (Employee) employes.Where(p => p.PassNom.Equals(person.PassNom));
             }
 
             return null;
@@ -218,11 +218,17 @@ namespace BankSystem.Service
             {
                 throw new ClientAgeLimitException("Данный клиент/сотрудник несовершеннолетний!");
             }
-
-
             if (person is Client)
             {
-                if (!clients.Contains((Client) (IPerson) person))
+                if (clients is not null)
+                {
+                    if (!clients.Contains((Client) (IPerson) person))
+                    {
+                        clients.Add((Client) (IPerson) person);
+                        OverwriteFile<Client>(clients);
+                    }
+                }
+                else
                 {
                     clients.Add((Client) (IPerson) person);
                     OverwriteFile<Client>(clients);

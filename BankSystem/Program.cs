@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using BankSystem.Service;
 using BankSystem.Models;
@@ -82,6 +83,13 @@ namespace BankSystem
                 bank.Add<Client>(fakeClients[i]);
                 bank.Add<Employee>(fakeEmployer[i]);
                 bank.ClientAccount(fakeClients[i], fakeAccounts[i]);
+            }
+
+            var exp = new ExportData();
+            for (int i = 0; i < 10; i++)
+            {
+                string path = Path.Combine("NOSQL_DB") + Path.DirectorySeparatorChar.ToString() + "ACC_"+i+".txt";
+                exp.ExportToFile(path,fakeAccounts[i]);
             }
         }
     }
