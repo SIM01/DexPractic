@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using BankSystem.Service;
 using BankSystem.Models;
 using Bogus;
@@ -10,7 +11,7 @@ namespace BankSystem
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var klientaccountDebet = new Accounts()
             {
@@ -88,9 +89,11 @@ namespace BankSystem
             var exp = new ExportData();
             for (int i = 0; i < 10; i++)
             {
-                string path = Path.Combine("NOSQL_DB") + Path.DirectorySeparatorChar.ToString() + "ACC_"+i+".txt";
-                exp.ExportToFile(path,fakeAccounts[i]);
+                string path = Path.Combine("NOSQL_DB") + Path.DirectorySeparatorChar.ToString() + "ACC_" + i + ".txt";
+                exp.ExportToFile(path, fakeAccounts[i]);
             }
+
+            var sumconv = await exchange.CurrencyConverterOnline(200, new Usd(), new Eur());
         }
     }
 }
