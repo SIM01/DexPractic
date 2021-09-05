@@ -50,13 +50,16 @@ namespace BankSystem.Service
                 byte[] arraytest = new byte[fileStream.Length];
                 fileStream.Read(arraytest, 0, arraytest.Length);
                 string readText = System.Text.Encoding.Default.GetString(arraytest);
-                if (person is null)
+                if (readText.Length != 0)
                 {
-                    dictionaryacc = JsonConvert.DeserializeObject<Dictionary<int, List<Accounts>>>(readText);
-                }
-                else
-                {
-                    person = JsonConvert.DeserializeObject<List<T>>(readText);
+                    if (person is null)
+                    {
+                        dictionaryacc = JsonConvert.DeserializeObject<Dictionary<int, List<Accounts>>>(readText);
+                    }
+                    else
+                    {
+                        person = JsonConvert.DeserializeObject<List<T>>(readText);
+                    }
                 }
             }
 
@@ -140,7 +143,7 @@ namespace BankSystem.Service
         {
             if (person is Client)
             {
-                return clients.Where(p => p.PassNom.Equals(person.PassNom)).SingleOrDefault() ;
+                return clients.Where(p => p.PassNom.Equals(person.PassNom)).SingleOrDefault();
             }
 
             if (person is Employee)
@@ -218,6 +221,7 @@ namespace BankSystem.Service
             {
                 throw new ClientAgeLimitException("Данный клиент/сотрудник несовершеннолетний!");
             }
+
             if (person is Client)
             {
                 if (clients is not null)

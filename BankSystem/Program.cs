@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using BankSystem.Service;
 using BankSystem.Models;
@@ -27,6 +28,7 @@ namespace BankSystem
                 Sum = 200
             };
             var bank = new BankService();
+
             var exchange = new Exchange();
             decimal sumin = 50;
             var valin = klientaccountDebet.Account;
@@ -40,13 +42,13 @@ namespace BankSystem
 
             Func<decimal, ICurrency, ICurrency, decimal> convertF = exchange.CurrencyConverter;
             bank.MoneyTransferFunc(sumin, klientaccountDebet, klientaccountKredit, convertF);
-
+/*
             foreach (var men in bank.clients)
             {
                 Console.WriteLine(
                     $"ФИО:{men.Fio}, № паспорта:{men.PassNom}, дата рождения:{men.DateOfBirth.ToString("dd/mm/yyyy")};");
             }
-
+*/
             var clientGenerator = new Faker<Client>("ru")
                     .RuleFor(x => x.Fio, f => f.Name.FullName())
                     .RuleFor(x => x.PassNom, f => f.Random.Int(11111, 99999))
@@ -79,12 +81,7 @@ namespace BankSystem
                 ;
 
             var fakeAccounts = accountGenerator.Generate(10).ToList();
-            for (int i = 0; i < 10; i++)
-            {
-                bank.Add<Client>(fakeClients[i]);
-                bank.Add<Employee>(fakeEmployer[i]);
-                bank.ClientAccount(fakeClients[i], fakeAccounts[i]);
-            }
+
 
             var exp = new ExportData();
             for (int i = 0; i < 10; i++)
@@ -94,6 +91,57 @@ namespace BankSystem
             }
 
             var sumconv = await exchange.CurrencyConverterOnline(200, new Usd(), new Eur());
+
+            for (int i = 0; i < 10; i++)
+            {
+                var countdown = new CountdownEvent(2);
+                var locker = new object();
+                ThreadPool.QueueUserWorkItem
+                (
+                    new WaitCallback
+                    (
+                        (_) =>
+                        {
+                            lock (locker) // синхронизация
+                            {
+                                bank.Add<Client>(fakeClients[i]);
+                            }
+
+                            countdown.Signal();
+                        }
+                    )
+                );
+                ThreadPool.QueueUserWorkItem
+                (
+                    new WaitCallback
+                    (
+                        (_) =>
+                        {
+                            lock (locker) // синхронизация
+                            {
+                                ShowClient(bank.clients);
+                            }
+
+                            countdown.Signal();
+                        }
+                    )
+                );
+
+                countdown.Wait();
+
+                Console.WriteLine("-----------------------------------");
+                //bank.Add<Employee>(fakeEmployer[i]);
+                //bank.ClientAccount(fakeClients[i], fakeAccounts[i]);
+            }
+        }
+
+        public static void ShowClient(List<Client> myClients)
+        {
+            foreach (var men in myClients)
+            {
+                Console.WriteLine(
+                    $"ФИО:{men.Fio}, № паспорта:{men.PassNom}, дата рождения:{men.DateOfBirth.ToString("dd/mm/yyyy")};");
+            }
         }
     }
 }
